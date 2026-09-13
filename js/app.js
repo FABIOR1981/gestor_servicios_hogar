@@ -411,7 +411,9 @@ window.app = {
     switchSection, switchCategory, checkCustomService, editServicio, deleteServicio, resetServicioForm,
     onPagoServicioChange, checkResponsableDistinto, editPago, deletePago, resetPagoForm, renderPagosTable,
     exportServicios: () => exportServiciosToWord(servicios),
+    exportServiciosCompacto: () => exportServiciosToWord(servicios, true),
     exportPagos: () => exportPagosToWord(pagos, servicios),
+    exportPagosCompacto: () => exportPagosToWord(pagos, servicios, true),
 };
 
 init();
