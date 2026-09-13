@@ -1,4 +1,5 @@
 import { dataStore } from './dataStore.js';
+import { exportServiciosToWord, exportPagosToWord } from './export-word.js';
 
 // Catálogo de nombres sugeridos por categoría (solo para poblar el <select>,
 // no es la lista de servicios ya cargados por el usuario).
@@ -409,6 +410,8 @@ function showToast(msg, icon = 'check') {
 window.app = {
     switchSection, switchCategory, checkCustomService, editServicio, deleteServicio, resetServicioForm,
     onPagoServicioChange, checkResponsableDistinto, editPago, deletePago, resetPagoForm, renderPagosTable,
+    exportServicios: () => exportServiciosToWord(servicios),
+    exportPagos: () => exportPagosToWord(pagos, servicios),
 };
 
 init();
