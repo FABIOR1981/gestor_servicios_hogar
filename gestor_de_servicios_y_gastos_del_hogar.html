@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Servicios y Gastos del Hogar</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        uyblue: '#0038a8',
+                        uygold: '#fcd116',
+                        uybg: '#f8fafc',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        .tab-active { border-bottom: 3px solid #0038a8; color: #0038a8; font-weight: 600; background-color: #eff6ff; }
+        /* Transiciones suaves */
+        .transition-all-200 { transition: all 0.2s ease-in-out; }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-slate-900 via-uyblue to-blue-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/10 p-3 rounded-xl backdrop-blur-md">
+                    <i class="fa-solid fa-[#fcd116] fa-house-user text-2xl text-amber-300"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">Registro de Servicios del Hogar</h1>
+                    <p class="text-xs text-blue-200">Control de facturas, cuentas y vencimientos | Uruguay</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 flex-wrap">
+                <button onclick="exportToWord()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-xl shadow-md transition-all flex items-center gap-2 text-sm">
+                    <i class="fa-solid fa-file-word text-lg"></i>
+                    <span>Exportar a Word (.doc)</span>
+                </button>
+                <button onclick="confirmClearData()" class="bg-red-500/20 hover:bg-red-500/40 text-red-100 font-medium px-3 py-2 rounded-xl border border-red-400/30 transition-all text-sm flex items-center gap-1">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span class="hidden md:inline">Limpiar Todo</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+
+        <!-- Top Stats Banner -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+                <div class="bg-blue-100 text-blue-700 p-3 rounded-xl">
+                    <i class="fa-solid fa-receipt text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Total Registros</p>
+                    <p id="stat-total-count" class="text-2xl font-bold text-slate-800">0</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+                <div class="bg-amber-100 text-amber-700 p-3 rounded-xl">
+                    <i class="fa-solid fa-clock text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Pendientes de Pago</p>
+                    <p id="stat-pending-count" class="text-2xl font-bold text-amber-600">0</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+                <div class="bg-emerald-100 text-emerald-700 p-3 rounded-xl">
+                    <i class="fa-solid fa-[#10b981] fa-circle-check text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Pagados</p>
+                    <p id="stat-paid-count" class="text-2xl font-bold text-emerald-600">0</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+                <div class="bg-indigo-100 text-indigo-700 p-3 rounded-xl">
+                    <i class="fa-solid fa-sack-dollar text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Gasto Total Est.</p>
+                    <p id="stat-total-amount" class="text-2xl font-bold text-slate-800">$U 0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+            <div class="flex overflow-x-auto border-b border-slate-200 scrollbar-none" id="category-tabs">
+                <button onclick="switchTab('hogar')" id="tab-hogar" class="tab-btn tab-active px-6 py-4 text-sm font-medium flex items-center gap-2 whitespace-nowrap transition-all">
+                    <i class="fa-solid fa-bolt text-yellow-500"></i> Servicios (UTE, ANTEL, etc.)
+                </button>
+                <button onclick="switchTab('inmueble')" id="tab-inmueble" class="tab-btn px-6 py-4 text-sm font-medium flex items-center gap-2 whitespace-nowrap text-slate-600 hover:text-blue-700 transition-all">
+                    <i class="fa-solid fa-building text-blue-500"></i> Inmueble (Alquiler, Tributos)
+                </button>
+                <button onclick="switchTab('vehiculos')" id="tab-vehiculos" class="tab-btn px-6 py-4 text-sm font-medium flex items-center gap-2 whitespace-nowrap text-slate-600 hover:text-blue-700 transition-all">
+                    <i class="fa-solid fa-car text-red-500"></i> Vehículos (Seguro, Patente)
+                </button>
+                <button onclick="switchTab('colegio')" id="tab-colegio" class="tab-btn px-6 py-4 text-sm font-medium flex items-center gap-2 whitespace-nowrap text-slate-600 hover:text-blue-700 transition-all">
+                    <i class="fa-solid fa-graduation-cap text-emerald-500"></i> Colegio / Educación
+                </button>
+                <button onclick="switchTab('varios')" id="tab-varios" class="tab-btn px-6 py-4 text-sm font-medium flex items-center gap-2 whitespace-nowrap text-slate-600 hover:text-blue-700 transition-all">
+                    <i class="fa-solid fa-asterisk text-purple-500"></i> Otros / Gastos Varios
+                </button>
+            </div>
+
+            <!-- Form & Table Container -->
+            <div class="p-6">
+                <!-- Form Section -->
+                <form id="record-form" onsubmit="handleFormSubmit(event)" class="bg-slate-50 p-5 rounded-xl border border-slate-200 mb-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 id="form-title" class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-plus-circle text-blue-600"></i> AGREGAR NUEVO REGISTRO
+                        </h3>
+                        <span id="editing-badge" class="hidden bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-semibold">
+                            Modificando Registro
+                        </span>
+                    </div>
+
+                    <input type="hidden" id="record-id" value="">
+                    <input type="hidden" id="record-category" value="hogar">
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Servicio / Concepto -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Servicio / Concepto *</label>
+                            <select id="field-service" onchange="checkCustomService(this.value)" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" required>
+                                <!-- Se llena dinámicamente según la pestaña activa -->
+                            </select>
+                            <input type="text" id="field-custom-service" placeholder="Especifique el servicio" class="w-full mt-2 bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none hidden">
+                        </div>
+
+                        <!-- Número de Cuenta / Padrón / Contrato -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nº Cuenta / Contrato / Padrón</label>
+                            <input type="text" id="field-account" placeholder="Ej: 123456789 / Padrón 4099" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+
+                        <!-- Titular / Referencia -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Titular / Referencia</label>
+                            <input type="text" id="field-holder" placeholder="Ej: Juan Pérez / Apto 302" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+
+                        <!-- Importe -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Importe ($U / USD) *</label>
+                            <div class="flex">
+                                <select id="field-currency" class="bg-slate-200 border border-r-0 border-slate-300 rounded-l-lg px-2 text-xs font-semibold text-slate-700">
+                                    <option value="$U">$U</option>
+                                    <option value="USD">USD</option>
+                                </select>
+                                <input type="number" step="0.01" id="field-amount" placeholder="0.00" class="w-full bg-white border border-slate-300 rounded-r-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" required>
+                            </div>
+                        </div>
+
+                        <!-- Fecha Vencimiento -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Fecha de Vencimiento</label>
+                            <input type="date" id="field-duedate" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+
+                        <!-- Estado de Pago -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Estado de Pago</label>
+                            <select id="field-status" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="Pagado">Pagado</option>
+                                <option value="Debito Automatico">Débito Automático</option>
+                            </select>
+                        </div>
+
+                        <!-- Observaciones / Notas -->
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Observaciones / Notas</label>
+                            <input type="text" id="field-notes" placeholder="Ej: Factura bimestral, cobrado por redpagos" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Submit & Cancel Buttons -->
+                    <div class="mt-4 flex gap-2 justify-end">
+                        <button type="button" id="btn-cancel" onclick="resetForm()" class="hidden px-4 py-2 text-sm font-medium text-slate-600 bg-slate-200 hover:bg-slate-300 rounded-lg transition-all">
+                            Cancelar
+                        </button>
+                        <button type="submit" id="btn-submit" class="px-5 py-2 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg shadow-sm transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-save"></i> Guardar Registro
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Table Section -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-slate-600"></i> Registros de la Categoría
+                    </h3>
+                    
+                    <div class="w-full sm:w-auto flex items-center gap-2">
+                        <div class="relative w-full sm:w-64">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+                            <input type="text" id="search-input" onkeyup="filterRecords()" placeholder="Buscar registro..." class="w-full bg-white pl-8 pr-3 py-1.5 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-100 text-xs uppercase text-slate-500 font-bold border-b border-slate-200">
+                            <tr>
+                                <th class="p-3.5">Servicio / Concepto</th>
+                                <th class="p-3.5">Cuenta / Contrato</th>
+                                <th class="p-3.5">Titular</th>
+                                <th class="p-3.5 text-right">Importe</th>
+                                <th class="p-3.5 text-center">Vencimiento</th>
+                                <th class="p-3.5 text-center">Estado</th>
+                                <th class="p-3.5">Notas</th>
+                                <th class="p-3.5 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="records-table-body" class="divide-y divide-slate-100">
+                            <!-- Filas dinámicas -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty state -->
+                <div id="empty-state" class="hidden text-center py-12">
+                    <i class="fa-regular fa-folder-open text-4xl text-slate-300 mb-2"></i>
+                    <p class="text-slate-500 font-medium">No hay datos ingresados en esta categoría.</p>
+                    <p class="text-xs text-slate-400">Utiliza el formulario de arriba para agregar uno nuevo.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-slate-700">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toast-message" class="text-sm font-medium">Operación realizada con éxito</span>
+    </div>
+
+    <script>
+        // Categorías y Servicios Predefinidos para Uruguay
+        const defaultServices = {
+            hogar: ["UTE (Energía Eléctrica)", "ANTEL (Fibra / Fijo)", "Ancel / Movistar / Claro", "OSE (Agua)", "Gas Natural / Garrafa", "Servicio Técnico / Mantenimiento", "Otro Servicio"],
+            inmueble: ["Alquiler de Apartamento", "Gastos Comunes", "Tributos Inmobiliarios (IMM/Intendencia)", "Impuesto de Enseñanza Primaria", "Fondo de Garantía (CGN/Anda/Aseguradora)", "Comisión Inmobiliaria", "Otro Inmueble"],
+            vehiculos: ["Seguro de Auto (BSE/SURA/Sancor/etc.)", "Patente de Rodados (SUCIVE)", "Cochera / Garaje", "Mantenimiento / Taller", "Peajes / Telepeaje", "Otro Vehículo"],
+            colegio: ["Cuota Mensual Colegio / Liceo", "Matrícula Anual", "Materiales / Libros / Uniforme", "Actividades Extraescolares / Deportes", "Clases Particulares / Idiomas", "Transporte Escolar / Comedor", "Otro Gasto Educativo"],
+            varios: ["Tarjeta de Crédito", "Gimnasio / Club", "Servicios Streaming (Netflix/Spotify)", "Préstamo / Cuota", "Gastos Médicos / Mutualista", "Otros"]
+        };
+
+        // Estado Global
+        let records = [];
+        let currentTab = 'hogar';
+
+        // Inicialización
+        window.onload = function() {
+            loadRecordsFromStorage();
+            populateServiceOptions();
+            renderTable();
+            updateStats();
+        };
+
+        // Guardar y Cargar desde LocalStorage
+        function saveRecordsToStorage() {
+            localStorage.setItem('uy_gastos_hogar_data', JSON.stringify(records));
+            updateStats();
+        }
+
+        function loadRecordsFromStorage() {
+            const saved = localStorage.getItem('uy_gastos_hogar_data');
+            if (saved) {
+                try {
+                    records = JSON.parse(saved);
+                } catch(e) {
+                    records = [];
+                }
+            } else {
+                // Datos de demostración iniciales para el usuario
+                records = [
+                    { id: '1', category: 'hogar', service: 'UTE (Energía Eléctrica)', account: '98451230', holder: 'Juan Pérez', currency: '$U', amount: 3450.00, duedate: '2026-10-15', status: 'Pendiente', notes: 'Tarifa Inteligente' },
+                    { id: '2', category: 'hogar', service: 'ANTEL (Fibra / Fijo)', account: '29001122', holder: 'Juan Pérez', currency: '$U', amount: 1890.00, duedate: '2026-10-10', status: 'Debito Automatico', notes: 'Plan Fibra En Casa' },
+                    { id: '3', category: 'inmueble', service: 'Alquiler de Apartamento', account: 'Garantía ANDA #4412', holder: 'Inmobiliaria Central', currency: '$U', amount: 24000.00, duedate: '2026-10-05', status: 'Pagado', notes: 'Mes Octubre' },
+                    { id: '4', category: 'vehiculos', service: 'Seguro de Auto (BSE/SURA/Sancor/etc.)', account: 'Poliza #99238', holder: 'Juan Pérez', currency: '$U', amount: 2800.00, duedate: '2026-10-20', status: 'Pendiente', notes: 'Cuota 4/10 Total' }
+                ];
+                saveRecordsToStorage();
+            }
+        }
+
+        // Manejo de Pestañas (Tabs)
+        function switchTab(tabCategory) {
+            currentTab = tabCategory;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('tab-active');
+                btn.classList.add('text-slate-600');
+            });
+
+            const activeBtn = document.getElementById(`tab-${tabCategory}`);
+            if(activeBtn) {
+                activeBtn.classList.add('tab-active');
+                activeBtn.classList.remove('text-slate-600');
+            }
+
+            document.getElementById('record-category').value = tabCategory;
+            populateServiceOptions();
+            resetForm();
+            renderTable();
+        }
+
+        // Llenar selector de servicios
+        function populateServiceOptions() {
+            const select = document.getElementById('field-service');
+            select.innerHTML = '';
+            const list = defaultServices[currentTab] || defaultServices.varios;
+
+            list.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item;
+                opt.textContent = item;
+                select.appendChild(opt);
+            });
+
+            // Opción personalizada extra
+            const customOpt = document.createElement('option');
+            customOpt.value = 'OTRO_CUSTOM';
+            customOpt.textContent = '+ Agregar Otro Personalizado...';
+            select.appendChild(customOpt);
+
+            checkCustomService(select.value);
+        }
+
+        function checkCustomService(val) {
+            const customInput = document.getElementById('field-custom-service');
+            if (val === 'OTRO_CUSTOM') {
+                customInput.classList.remove('hidden');
+                customInput.required = true;
+            } else {
+                customInput.classList.add('hidden');
+                customInput.required = false;
+            }
+        }
+
+        // Agregar / Editar Registro
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const recordId = document.getElementById('record-id').value;
+            let serviceVal = document.getElementById('field-service').value;
+            if (serviceVal === 'OTRO_CUSTOM') {
+                serviceVal = document.getElementById('field-custom-service').value.trim() || 'Servicio Personalizado';
+            }
+
+            const newRecord = {
+                id: recordId || Date.now().toString(),
+                category: currentTab,
+                service: serviceVal,
+                account: document.getElementById('field-account').value.trim(),
+                holder: document.getElementById('field-holder').value.trim(),
+                currency: document.getElementById('field-currency').value,
+                amount: parseFloat(document.getElementById('field-amount').value) || 0,
+                duedate: document.getElementById('field-duedate').value,
+                status: document.getElementById('field-status').value,
+                notes: document.getElementById('field-notes').value.trim()
+            };
+
+            if (recordId) {
+                // Editar existente
+                const idx = records.findIndex(r => r.id === recordId);
+                if (idx !== -1) records[idx] = newRecord;
+                showToast('Registro actualizado correctamente');
+            } else {
+                // Crear nuevo
+                records.push(newRecord);
+                showToast('Nuevo registro agregado');
+            }
+
+            saveRecordsToStorage();
+            resetForm();
+            renderTable();
+        }
+
+        function editRecord(id) {
+            const rec = records.find(r => r.id === id);
+            if (!rec) return;
+
+            document.getElementById('record-id').value = rec.id;
+            
+            // Si el servicio no está en la lista estándar, poner en custom
+            const select = document.getElementById('field-service');
+            let foundOption = Array.from(select.options).some(opt => opt.value === rec.service);
+
+            if (foundOption) {
+                select.value = rec.service;
+                checkCustomService(rec.service);
+            } else {
+                select.value = 'OTRO_CUSTOM';
+                checkCustomService('OTRO_CUSTOM');
+                document.getElementById('field-custom-service').value = rec.service;
+            }
+
+            document.getElementById('field-account').value = rec.account || '';
+            document.getElementById('field-holder').value = rec.holder || '';
+            document.getElementById('field-currency').value = rec.currency || '$U';
+            document.getElementById('field-amount').value = rec.amount;
+            document.getElementById('field-duedate').value = rec.duedate || '';
+            document.getElementById('field-status').value = rec.status;
+            document.getElementById('field-notes').value = rec.notes || '';
+
+            // UI Mode Edit
+            document.getElementById('form-title').innerHTML = `<i class="fa-solid fa-pen-to-square text-amber-600"></i> EDITAR REGISTRO`;
+            document.getElementById('btn-submit').innerHTML = `<i class="fa-solid fa-sync"></i> Actualizar`;
+            document.getElementById('btn-submit').className = "px-5 py-2 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-lg shadow-sm transition-all flex items-center gap-2";
+            document.getElementById('btn-cancel').classList.remove('hidden');
+            document.getElementById('editing-badge').classList.remove('hidden');
+
+            window.scrollTo({ top: 180, behavior: 'smooth' });
+        }
+
+        function deleteRecord(id) {
+            if (confirm('¿Desea eliminar este registro?')) {
+                records = records.filter(r => r.id !== id);
+                saveRecordsToStorage();
+                renderTable();
+                showToast('Registro eliminado', 'trash');
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('record-form').reset();
+            document.getElementById('record-id').value = '';
+            document.getElementById('field-custom-service').classList.add('hidden');
+            
+            document.getElementById('form-title').innerHTML = `<i class="fa-solid fa-plus-circle text-blue-600"></i> AGREGAR NUEVO REGISTRO`;
+            document.getElementById('btn-submit').innerHTML = `<i class="fa-solid fa-save"></i> Guardar Registro`;
+            document.getElementById('btn-submit').className = "px-5 py-2 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg shadow-sm transition-all flex items-center gap-2";
+            document.getElementById('btn-cancel').classList.add('hidden');
+            document.getElementById('editing-badge').classList.add('hidden');
+        }
+
+        // Renderizado de tabla filtrada por pestaña y texto de búsqueda
+        function renderTable() {
+            const tbody = document.getElementById('records-table-body');
+            const emptyState = document.getElementById('empty-state');
+            const query = document.getElementById('search-input').value.toLowerCase();
+
+            const filtered = records.filter(r => {
+                const matchesCategory = r.category === currentTab;
+                const matchesSearch = r.service.toLowerCase().includes(query) || 
+                                      (r.account && r.account.toLowerCase().includes(query)) ||
+                                      (r.holder && r.holder.toLowerCase().includes(query)) ||
+                                      (r.notes && r.notes.toLowerCase().includes(query));
+                return matchesCategory && matchesSearch;
+            });
+
+            tbody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            filtered.forEach(rec => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 border-b border-slate-100 transition-colors";
+
+                // Formatear Fecha
+                let formattedDate = '-';
+                if (rec.duedate) {
+                    const parts = rec.duedate.split('-');
+                    if (parts.length === 3) formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                }
+
+                // Badge de estado
+                let statusBadge = '';
+                if (rec.status === 'Pagado') {
+                    statusBadge = `<span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1"><i class="fa-solid fa-check text-xs"></i> Pagado</span>`;
+                } else if (rec.status === 'Debito Automatico') {
+                    statusBadge = `<span class="bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1"><i class="fa-solid fa-arrows-rotate text-xs"></i> Débito Aut.</span>`;
+                } else {
+                    statusBadge = `<span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1"><i class="fa-solid fa-clock text-xs"></i> Pendiente</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="p-3.5 font-semibold text-slate-800">${escapeHtml(rec.service)}</td>
+                    <td class="p-3.5 font-mono text-xs text-slate-600">${escapeHtml(rec.account || '-')}</td>
+                    <td class="p-3.5 text-slate-600">${escapeHtml(rec.holder || '-')}</td>
+                    <td class="p-3.5 text-right font-bold text-slate-800">${rec.currency} ${rec.amount.toLocaleString('es-UY', {minimumFractionDigits: 2})}</td>
+                    <td class="p-3.5 text-center font-mono text-xs text-slate-600">${formattedDate}</td>
+                    <td class="p-3.5 text-center">${statusBadge}</td>
+                    <td class="p-3.5 text-slate-500 text-xs max-w-xs truncate">${escapeHtml(rec.notes || '-')}</td>
+                    <td class="p-3.5 text-center">
+                        <div class="flex items-center justify-center gap-2">
+                            <button onclick="editRecord('${rec.id}')" title="Editar" class="text-slate-400 hover:text-blue-600 p-1.5 rounded-lg hover:bg-blue-50 transition-all">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deleteRecord('${rec.id}')" title="Eliminar" class="text-slate-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-all">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterRecords() {
+            renderTable();
+        }
+
+        // Estadísticas generales
+        function updateStats() {
+            document.getElementById('stat-total-count').textContent = records.length;
+            
+            const pending = records.filter(r => r.status === 'Pendiente').length;
+            const paid = records.filter(r => r.status === 'Pagado' || r.status === 'Debito Automatico').length;
+            
+            document.getElementById('stat-pending-count').textContent = pending;
+            document.getElementById('stat-paid-count').textContent = paid;
+
+            // Suma total aproximada (agrupada principalmente en $U)
+            const totalUyu = records
+                .filter(r => r.currency === '$U')
+                .reduce((acc, r) => acc + (r.amount || 0), 0);
+
+            document.getElementById('stat-total-amount').textContent = `$U ${totalUyu.toLocaleString('es-UY', {maximumFractionDigits: 0})}`;
+        }
+
+        function confirmClearData() {
+            if(confirm('¿Está seguro de borra TODOS los datos guardados? Esta acción no se puede deshacer.')) {
+                records = [];
+                saveRecordsToStorage();
+                renderTable();
+                showToast('Todos los datos fueron borrados', 'trash');
+            }
+        }
+
+        // Utility: Escapar HTML para evitar XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.innerText = text;
+            return div.innerHTML;
+        }
+
+        function showToast(msg, icon = 'check') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.textContent = msg;
+            toastIcon.className = icon === 'trash' ? 'fa-solid fa-trash-can text-red-400' : 'fa-solid fa-circle-check text-emerald-400';
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Generador de Documento Word (.doc / HTML-Based Word Document) con formato estilizado
+        function exportToWord() {
+            if (records.length === 0) {
+                alert('No hay datos registrados para exportar.');
+                return;
+            }
+
+            const categoryLabels = {
+                hogar: "Servicios del Hogar (UTE, ANTEL, OSE, etc.)",
+                inmueble: "Gastos de Inmueble (Alquiler, Tributos, etc.)",
+                vehiculos: "Vehículos (Seguro, Patente, Garaje)",
+                colegio: "Colegio / Educación (Cuotas, Matrícula, Materiales)",
+                varios: "Otros Gastos Varios"
+            };
+
+            const dateStr = new Date().toLocaleDateString('es-UY', {
+                year: 'numeric', month: 'long', day: 'numeric'
+            });
+
+            // Construir HTML Estilizado exclusivo para Microsoft Word
+            let htmlContent = `
+            <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+            <head>
+                <meta charset='utf-8'>
+                <title>Registro de Servicios y Gastos</title>
+                <style>
+                    body {
+                        font-family: 'Calibri', 'Arial', sans-serif;
+                        color: #1e293b;
+                        line-height: 1.5;
+                        padding: 20px;
+                    }
+                    .header-title {
+                        color: #0038a8;
+                        font-size: 24pt;
+                        font-weight: bold;
+                        text-align: center;
+                        margin-bottom: 5px;
+                    }
+                    .subtitle {
+                        text-align: center;
+                        color: #64748b;
+                        font-size: 11pt;
+                        margin-bottom: 25px;
+                        border-bottom: 2px solid #0038a8;
+                        padding-bottom: 10px;
+                    }
+                    .section-title {
+                        color: #0f172a;
+                        font-size: 14pt;
+                        font-weight: bold;
+                        margin-top: 25px;
+                        margin-bottom: 10px;
+                        background-color: #f1f5f9;
+                        padding: 6px 10px;
+                        border-left: 4px solid #0038a8;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 20px;
+                        font-size: 10pt;
+                    }
+                    th {
+                        background-color: #0038a8;
+                        color: #ffffff;
+                        font-weight: bold;
+                        text-align: left;
+                        padding: 8px;
+                        border: 1px solid #0038a8;
+                    }
+                    td {
+                        padding: 8px;
+                        border: 1px solid #cbd5e1;
+                    }
+                    tr:nth-child(even) {
+                        background-color: #f8fafc;
+                    }
+                    .status-pagado {
+                        color: #166534;
+                        font-weight: bold;
+                    }
+                    .status-pendiente {
+                        color: #9a3412;
+                        font-weight: bold;
+                    }
+                    .status-debito {
+                        color: #1e40af;
+                        font-weight: bold;
+                    }
+                    .summary-box {
+                        margin-top: 30px;
+                        background-color: #f8fafc;
+                        border: 1px solid #cbd5e1;
+                        padding: 15px;
+                        border-radius: 5px;
+                    }
+                    .footer {
+                        margin-top: 40px;
+                        text-align: center;
+                        font-size: 9pt;
+                        color: #94a3b8;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header-title">REGISTRO DE SERVICIOS Y GASTOS DEL HOGAR</div>
+                <div class="subtitle">Reporte consolidado de cuentas y servicios - Uruguay | Generado el ${dateStr}</div>
+            `;
+
+            // Agrupar por categoría
+            const categories = ['hogar', 'inmueble', 'vehiculos', 'colegio', 'varios'];
+            let grandTotalUyu = 0;
+            let grandTotalUsd = 0;
+
+            categories.forEach(cat => {
+                const catRecords = records.filter(r => r.category === cat);
+                if (catRecords.length > 0) {
+                    htmlContent += `<div class="section-title">${categoryLabels[cat]}</div>`;
+                    htmlContent += `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Servicio / Concepto</th>
+                                    <th>Cuenta / Contrato</th>
+                                    <th>Titular</th>
+                                    <th style="text-align: right;">Importe</th>
+                                    <th style="text-align: center;">Vencimiento</th>
+                                    <th style="text-align: center;">Estado</th>
+                                    <th>Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    catRecords.forEach(r => {
+                        let statusClass = 'status-pendiente';
+                        if(r.status === 'Pagado') statusClass = 'status-pagado';
+                        if(r.status === 'Debito Automatico') statusClass = 'status-debito';
+
+                        let formattedDate = '-';
+                        if (r.duedate) {
+                            const parts = r.duedate.split('-');
+                            if (parts.length === 3) formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                        }
+
+                        if (r.currency === '$U') grandTotalUyu += (r.amount || 0);
+                        if (r.currency === 'USD') grandTotalUsd += (r.amount || 0);
+
+                        htmlContent += `
+                            <tr>
+                                <td><b>${escapeHtml(r.service)}</b></td>
+                                <td>${escapeHtml(r.account || '-')}</td>
+                                <td>${escapeHtml(r.holder || '-')}</td>
+                                <td style="text-align: right;"><b>${r.currency} ${(r.amount || 0).toLocaleString('es-UY', {minimumFractionDigits: 2})}</b></td>
+                                <td style="text-align: center;">${formattedDate}</td>
+                                <td style="text-align: center;" class="${statusClass}">${escapeHtml(r.status)}</td>
+                                <td>${escapeHtml(r.notes || '-')}</td>
+                            </tr>
+                        `;
+                    });
+
+                    htmlContent += `
+                            </tbody>
+                        </table>
+                    `;
+                }
+            });
+
+            // Resumen Final
+            htmlContent += `
+                <div class="summary-box">
+                    <h3 style="margin-top:0; color:#0038a8;">RESUMEN TOTAL DE GASTOS REGISTRADOS</h3>
+                    <p style="font-size:12pt; margin:5px 0;"><b>Total en Pesos Uruguayos ($U):</b> $U ${grandTotalUyu.toLocaleString('es-UY', {minimumFractionDigits: 2})}</p>
+                    ${grandTotalUsd > 0 ? `<p style="font-size:12pt; margin:5px 0;"><b>Total en Dólares (USD):</b> USD ${grandTotalUsd.toLocaleString('es-UY', {minimumFractionDigits: 2})}</p>` : ''}
+                    <p style="font-size:10pt; color:#64748b; margin-top:10px;">Total de ítems registrados: <b>${records.length}</b></p>
+                </div>
+
+                <div class="footer">
+                    Documento generado mediante la aplicación de Registro de Servicios del Hogar (Uruguay).
+                </div>
+            </body>
+            </html>
+            `;
+
+            // Crear Blob para descarga de Word
+            const blob = new Blob(['\ufeff' + htmlContent], {
+                type: 'application/msword'
+            });
+
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Registro_Servicios_Hogar_${new Date().toISOString().slice(0,10)}.doc`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast('Documento Word descargado exitosamente');
+        }
+    </script>
+</body>
+</html>
