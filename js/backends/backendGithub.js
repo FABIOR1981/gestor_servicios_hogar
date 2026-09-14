@@ -1,5 +1,6 @@
 // Backend que habla con nuestra propia Netlify Function, nunca directo con GitHub.
-// El token vive solo del lado del servidor (variable de entorno en Netlify).
+// Trabaja con texto plano: quien decide si ese texto es JSON normal o un
+// paquete cifrado es dataStore.js, no este archivo.
 
 const BASE = '/.netlify/functions/data';
 
@@ -8,20 +9,20 @@ async function get(resource) {
     if (!res.ok) {
         throw new Error(`No se pudo leer "${resource}" (HTTP ${res.status})`);
     }
-    return res.json();
+    return res.text();
 }
 
-async function save(resource, data) {
+async function save(resource, texto) {
     const res = await fetch(`${BASE}?resource=${resource}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data, null, 2),
+        headers: { 'Content-Type': 'text/plain' },
+        body: texto,
     });
     if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || `No se pudo guardar "${resource}" (HTTP ${res.status})`);
     }
-    return res.json();
+    return texto;
 }
 
 export const githubBackend = { get, save };
