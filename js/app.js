@@ -1,5 +1,6 @@
 import { dataStore } from './dataStore.js';
 import { exportServiciosToWord } from './export-word.js';
+import { setClaveSesion } from './session.js';
 
 // Catálogo de nombres sugeridos por categoría (solo para poblar el <select>,
 // no es la lista de servicios ya cargados por el usuario).
@@ -21,6 +22,7 @@ async function init() {
         setSyncStatus('ok');
     } catch (err) {
         setSyncStatus('error', err.message);
+        throw err; // lo maneja intentarIngresar() para decidir si la contraseña era incorrecta
     }
     populateServiceNameOptions();
     renderServiciosTable();
@@ -215,4 +217,34 @@ window.app = {
     exportServiciosCompacto: () => exportServiciosToWord(servicios, true),
 };
 
-init();
+// ===================== PORTÓN DE CONTRASEÑA =====================
+
+document.getElementById('password-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const passwordInput = document.getElementById('password-input');
+    const errorEl = document.getElementById('password-error');
+    const submitBtn = document.getElementById('password-submit');
+
+    errorEl.classList.add('hidden');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Verificando...`;
+
+    setClaveSesion(passwordInput.value);
+
+    try {
+        await init();
+        document.getElementById('password-gate').classList.add('hidden');
+        document.getElementById('app-content').classList.remove('hidden');
+    } catch (err) {
+        setClaveSesion(null); // no dejamos una contraseña incorrecta cargada en memoria
+        errorEl.textContent = err.message === 'Contraseña incorrecta.'
+            ? 'Contraseña incorrecta.'
+            : `No se pudo acceder: ${err.message}`;
+        errorEl.classList.remove('hidden');
+        passwordInput.value = '';
+        passwordInput.focus();
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i class="fa-solid fa-unlock"></i> Entrar`;
+    }
+});
