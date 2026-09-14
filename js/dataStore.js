@@ -10,7 +10,4 @@ const backend = githubBackend; // <- único punto donde se elige el backend acti
 export const dataStore = {
     getServicios: () => backend.get('servicios'),
     saveServicios: (servicios) => backend.save('servicios', servicios),
-
-    getPagos: () => backend.get('pagos'),
-    savePagos: (pagos) => backend.save('pagos', pagos),
 };

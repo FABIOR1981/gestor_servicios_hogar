@@ -6,7 +6,7 @@
 //   GITHUB_BASE_PATH  -> gestor_Servicios
 
 const GITHUB_API = 'https://api.github.com';
-const RECURSOS_VALIDOS = ['servicios', 'pagos'];
+const RECURSOS_VALIDOS = ['servicios'];
 
 exports.handler = async (event) => {
     const { GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO, GITHUB_BASE_PATH } = process.env;

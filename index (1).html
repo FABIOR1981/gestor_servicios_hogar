@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Servicios del Hogar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { uyblue: '#0038a8', uygold: '#fcd116', uybg: '#f8fafc' }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-slate-900 via-uyblue to-blue-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/10 p-3 rounded-xl backdrop-blur-md">
+                    <i class="fa-solid fa-house-user text-2xl text-amber-300"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">Registro de Servicios del Hogar</h1>
+                    <p class="text-xs text-blue-200">Uruguay</p>
+                </div>
+            </div>
+            <div id="sync-status" class="text-xs text-blue-200 flex items-center gap-2">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Cargando datos...
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+
+        <!-- Stats -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+                <div class="bg-blue-100 text-blue-700 p-3 rounded-xl"><i class="fa-solid fa-plug text-xl"></i></div>
+                <div>
+                    <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Servicios Registrados</p>
+                    <p id="stat-servicios-count" class="text-2xl font-bold text-slate-800">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+            <div class="flex overflow-x-auto border-b border-slate-200" id="category-tabs">
+                <button onclick="app.switchCategory('hogar')" id="tab-hogar" class="tab-btn tab-active px-6 py-4 text-sm font-medium flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-bolt text-yellow-500"></i> Hogar (UTE, ANTEL, etc.)
+                </button>
+                <button onclick="app.switchCategory('inmueble')" id="tab-inmueble" class="tab-btn px-6 py-4 text-sm font-medium flex items-center gap-2 whitespace-nowrap text-slate-600">
+                    <i class="fa-solid fa-building text-blue-500"></i> Inmueble
+                </button>
+                <button onclick="app.switchCategory('vehiculos')" id="tab-vehiculos" class="tab-btn px-6 py-4 text-sm font-medium flex items-center gap-2 whitespace-nowrap text-slate-600">
+                    <i class="fa-solid fa-car text-red-500"></i> Vehículos
+                </button>
+                <button onclick="app.switchCategory('colegio')" id="tab-colegio" class="tab-btn px-6 py-4 text-sm font-medium flex items-center gap-2 whitespace-nowrap text-slate-600">
+                    <i class="fa-solid fa-graduation-cap text-emerald-500"></i> Colegio
+                </button>
+                <button onclick="app.switchCategory('varios')" id="tab-varios" class="tab-btn px-6 py-4 text-sm font-medium flex items-center gap-2 whitespace-nowrap text-slate-600">
+                    <i class="fa-solid fa-asterisk text-purple-500"></i> Varios
+                </button>
+            </div>
+
+            <div class="p-6">
+                <form id="servicio-form" class="bg-slate-50 p-5 rounded-xl border border-slate-200 mb-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 id="servicio-form-title" class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-plus-circle text-blue-600"></i> NUEVO SERVICIO
+                        </h3>
+                        <span id="servicio-editing-badge" class="hidden bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-semibold">Modificando</span>
+                    </div>
+                    <input type="hidden" id="servicio-id" value="">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Servicio / Concepto *</label>
+                            <select id="field-service" onchange="app.checkCustomService(this.value)" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm outline-none" required></select>
+                            <input type="text" id="field-custom-service" placeholder="Especifique el servicio" class="w-full mt-2 bg-white border border-slate-300 rounded-lg p-2.5 text-sm outline-none hidden">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Nº Cuenta / Contrato / Padrón</label>
+                            <input type="text" id="field-account" placeholder="Ej: 123456789" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Notas</label>
+                            <input type="text" id="field-servicio-notes" placeholder="Observaciones" class="w-full bg-white border border-slate-300 rounded-lg p-2.5 text-sm outline-none">
+                        </div>
+                    </div>
+                    <div class="mt-4 flex gap-2 justify-end">
+                        <button type="button" id="servicio-btn-cancel" onclick="app.resetServicioForm()" class="hidden px-4 py-2 text-sm font-medium text-slate-600 bg-slate-200 hover:bg-slate-300 rounded-lg">Cancelar</button>
+                        <button type="submit" id="servicio-btn-submit" class="px-5 py-2 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-lg flex items-center gap-2">
+                            <i class="fa-solid fa-save"></i> Guardar Servicio
+                        </button>
+                    </div>
+                </form>
+
+                <div class="flex justify-end gap-2 mb-3">
+                    <button onclick="app.exportServiciosCompacto()" class="bg-slate-600 hover:bg-slate-500 text-white font-medium px-4 py-2 rounded-xl shadow-md flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-file-word"></i> Exportar Servicios (Word compacto)
+                    </button>
+                    <button onclick="app.exportServicios()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-xl shadow-md flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-file-word"></i> Exportar Servicios (Word)
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-100 text-xs uppercase text-slate-500 font-bold border-b border-slate-200">
+                            <tr>
+                                <th class="p-3.5">Servicio</th>
+                                <th class="p-3.5">Cuenta / Contrato</th>
+                                <th class="p-3.5">Notas</th>
+                                <th class="p-3.5 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="servicios-table-body" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+                <div id="servicios-empty-state" class="hidden text-center py-12">
+                    <i class="fa-regular fa-folder-open text-4xl text-slate-300 mb-2"></i>
+                    <p class="text-slate-500 font-medium">No hay servicios en esta categoría.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-slate-700">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toast-message" class="text-sm font-medium">Operación realizada con éxito</span>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

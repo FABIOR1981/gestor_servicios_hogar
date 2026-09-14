@@ -3,7 +3,6 @@
 
 const KEYS = {
     servicios: 'gsh_servicios',
-    pagos: 'gsh_pagos',
 };
 
 async function get(resource) {

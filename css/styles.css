@@ -3,7 +3,7 @@ body {
     background-color: #f1f5f9;
 }
 
-/* Tabs de categoría (dentro de Servicios) */
+/* Tabs de categoría */
 .tab-active {
     border-bottom: 3px solid #0038a8;
     color: #0038a8;
@@ -11,21 +11,6 @@ body {
     background-color: #eff6ff;
 }
 
-/* Tabs de sección principal (Servicios / Pagos) */
-.section-tab-active {
-    border-bottom: 3px solid #fcd116;
-    color: #0038a8;
-    font-weight: 700;
-    background-color: #eff6ff;
-}
-
 .transition-all-200 {
     transition: all 0.2s ease-in-out;
-}
-
-/* Badge de "no fue el responsable habitual" */
-.badge-responsable-distinto {
-    background-color: #fef3c7;
-    color: #92400e;
-    border: 1px solid #fcd34d;
 }
