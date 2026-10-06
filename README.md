@@ -2,6 +2,10 @@
 
 Aplicación web personal para tener en un solo lugar los servicios y cuentas de la casa: UTE, ANTEL, inmueble, vehículos, colegio y otros. Para cada uno se anotan el número de cuenta, contrato o padrón y notas. Los datos se guardan cifrados.
 
+## Documentación
+
+El manual de usuario está en [documentacion-central](https://github.com/FABIOR1981/documentacion-central/tree/main/gestor_servicios_hogar/documentacion) ([PDF](https://github.com/FABIOR1981/documentacion-central/blob/main/gestor_servicios_hogar/documentacion/MANUAL_USUARIO.pdf)). También se puede consultar desde la bitácora de proyectos.
+
 ## Funcionalidades
 
 - **Acceso con contraseña**: la misma contraseña se usa para cifrar y descifrar los datos.
